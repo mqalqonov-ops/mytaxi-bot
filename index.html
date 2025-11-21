@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Taxi Driver Panel</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background: #f4f4f4; }
+    #map { height: 100vh; width: 100%; }
+    header { background: #1e3a8a; color: white; padding: 15px; text-align: center; font-size: 20px; position: fixed; top: 0; width: 100%; z-index: 1000; }
+    .status { background: #10b981; color: white; padding: 10px; text-align: center; font-weight: bold; position: fixed; bottom: 0; width: 100%; z-index: 1000; }
+    .alert { 
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: rgba(239, 68, 68, 0.98); color: white; padding: 30px; border-radius: 20px; font-size: 22px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 2000; width: 90%; max-width: 400px;
+      text-align: center; animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.05); } 100% { transform: translate(-50%, -50%) scale(1); } }
+    button { padding: 18px 50px; font-size: 24px; margin: 10px; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; }
+    .yes { background: #10b981; color: white; }
+    .no { background: #ef4444; color: white; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <header>Такси хизмати – Водитель панели</header>
+  <div class="status">Онлайн • ID: <span id="driver_id">...</span></div>
+  <div id="map"></div>
+
+  <div id="order_alert" class="alert hidden">
+    <h2>Янги буюртма!</h2>
+    <p>Мижоз: <span id="client_name">...</span></p>
+    <p>Масофа: <span id="distance">...</span> км</p>
+    <p>Нарх: <span id="price">...</span> сўм</p>
+    <img src="https://media.giphy.com/media/l0MYC0LajbaPoA3ry/giphy.gif" width="200">
+    <p><strong>Қабул қиласизми?</strong></p>
+    <button class="yes" onclick="acceptOrder()">ҲА</button>
+    <button class="no" onclick="rejectOrder()">ЙЁҚ</button>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const driverId = new URLSearchParams(window.location.search).get('id') || "Номаълум";
+    document.getElementById('driver_id').innerText = driverId;
+
+    const map = L.map('map').setView([41.3111, 69.2797], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    const driverMarker = L.marker([41.3111, 69.2797], {
+      icon: L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png' })
+    }).addTo(map).bindPopup("Сиз");
+
+    let clientMarker = null;
+
+    // Доимий локация – таксистнинг ўзи кўринади
+    if (navigator.geolocation) {
+      navigator.geolocation.watchPosition(pos => {
+        const latlng = [pos.coords.latitude, pos.coords.longitude];
+        driverMarker.setLatLng(latlng);
+        map.setView(latlng, 16);
+      }, () => alert("Локация рухсати беринг!"), { enableHighAccuracy: true });
+    }
+
+    // Тест буюртма
+    setTimeout(() => {
+      document.getElementById('client_name').innerText = "Алишер";
+      document.getElementById('distance').innerText = "3.2";
+      document.getElementById('price').innerText = "34 200";
+      document.getElementById('order_alert').classList.remove('hidden');
+
+      if (clientMarker) clientMarker.remove();
+      clientMarker = L.marker([41.32, 69.28], {
+        icon: L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png' })
+      }).addTo(map).bindPopup("Мижоз").openPopup();
+      map.setView([41.32, 69.28], 14);
+    }, 5000);
+
+    function acceptOrder() {
+      alert("Қабул қилинди!");
+      document.getElementById('order_alert').classList.add('hidden');
+      if (clientMarker) clientMarker.remove();
+    }
+
+    function rejectOrder() {
+      document.getElementById('order_alert').classList.add('hidden');
+      if (clientMarker) clientMarker.remove();
+    }
+  </script>
+</body>
+</html>
